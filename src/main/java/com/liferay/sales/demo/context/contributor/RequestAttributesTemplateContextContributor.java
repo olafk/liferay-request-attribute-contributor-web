@@ -59,10 +59,15 @@ public class RequestAttributesTemplateContextContributor
 		}
 		
 		String sObject = object.toString();
+		String className = object.getClass().getName();
 		if(object instanceof String) {
 			return "\"" + HtmlUtil.escape(sObject) + "\"";
 		} else if(object instanceof Number) {
 			return sObject;
+		} else if(sObject.startsWith(className + "@")) {
+			return "- ("
+					+ object.getClass().getName()
+					+ ")";  
 		} else {
 			return HtmlUtil.escape(sObject) 
 					+ " ("
