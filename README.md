@@ -12,7 +12,13 @@ If you're preparing an AC demo and your browsers are sending this header, it's c
 
 In some cases it's useful to inspect the request attributes - e.g. in order to see what information you _could_ access if you needed to. 
 
-## How to use
+## Access all template variables
+
+In some cases it's useful to display what you have available to use in your templates. This templateContextContributor provides insight - use it in a custom fragment by just including ${templateDumper} and see the output.
+
+Note: This component depends on a side effect (saving the context itself, for the request) of the current implementation. It's not guaranteed to work 100% correct, complete, or for all time into the future, when the Template-Contribution implementation changes.
+
+# How to use
 
 * Clone within a Liferay Workspace's module directory as `request-attribute-contributor-web`
 * Compile
