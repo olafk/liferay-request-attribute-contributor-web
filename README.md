@@ -2,12 +2,6 @@
 
 A quick POC to access request attributes from a Liferay Template (aka Fragment) for the following use cases
 
-## Detection of DNT header
-
-Liferay Analytics Cloud documents that it won't track users that send the "Do not track" header, aka DNT. 
-
-If you're preparing an AC demo and your browsers are sending this header, it's crucial that you detect this early, before you're sending days worth of traffic. 
-
 ## Access all request attributes
 
 In some cases it's useful to inspect the request attributes - e.g. in order to see what information you _could_ access if you needed to. 
@@ -18,6 +12,14 @@ In some cases it's useful to display what you have available to use in your temp
 
 Note: This component depends on a side effect (saving the context itself, for the request) of the current implementation. It's not guaranteed to work 100% correct, complete, or for all time into the future, when the Template-Contribution implementation changes.
 
+## Detection of DNT header
+
+Liferay Analytics Cloud documents that it won't track users that send the "Do not track" header, aka DNT. 
+
+If you're preparing an AC demo and your browsers are sending this header, it's crucial that you detect this early, before you're sending days worth of traffic. 
+
+The detection is a combination of some server-side code and a fragment. Once this plugin is deployed, you only need to create the fragment (see below) and add it to a page - preferably the general Master Page.
+
 # How to use
 
 * Clone within a Liferay Workspace's module directory as `request-attribute-contributor-web`
@@ -25,6 +27,39 @@ Note: This component depends on a side effect (saving the context itself, for th
 * Deploy
 * Create a fragment, including styling according to your needs. (See below for a samples)
 * Add fragment to any page
+
+### Request Attribute Dumper Sample Fragment:
+
+    <div class="fragment_requestAttributes">
+	    ${requestAttributes}
+    </div>
+
+### Fragment sample CSS:
+
+	.fragment_requestAttributes .attributeName {
+		font-weight:bold;
+	}
+	.fragment_requestAttributes .attributeVisualization {
+		border: 1px solid grey;
+	}
+	
+### Sample Screenshot:
+
+![sample-request-attributes.png](sample-request-attributes.png)
+
+### Template variable dumper
+
+	<div class="templateVariableDump">
+	  ${templateDumper}
+	</div> 
+
+(no CSS/JS required)
+
+Will show a UL list with name and Java Class Name of the object available in the fragment's context, e.g. starting with
+* __Application__ (freemarker.ext.servlet.ServletContextHashModel)
+* __PortalJspTagLibs__ (com.liferay.portal.template.freemarker.internal.FreeMarkerManager$TaglibFactoryWrapper)
+* __PortletJspTagLibs__ (com.liferay.portal.template.freemarker.internal.FreeMarkerManager$TaglibFactoryWrapper)
+* ...
 
 ### DNT Sample Fragment
 
@@ -128,21 +163,3 @@ Note: This component depends on a side effect (saving the context itself, for th
 
 ![sample-dnt.png](sample-dnt.png)
 
-### Request Attribute Dumper Sample Fragment:
-
-    <div class="fragment_requestAttributes">
-	    ${requestAttributes}
-    </div>
-
-### Fragment sample CSS:
-
-	.fragment_requestAttributes .attributeName {
-		font-weight:bold;
-	}
-	.fragment_requestAttributes .attributeVisualization {
-		border: 1px solid grey;
-	}
-	
-### Sample Screenshot:
-
-![sample-request-attributes.png](sample-request-attributes.png)
