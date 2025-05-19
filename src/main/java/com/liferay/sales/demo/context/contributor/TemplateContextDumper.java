@@ -2,8 +2,10 @@ package com.liferay.sales.demo.context.contributor;
 
 import com.liferay.petra.reflect.ReflectionUtil;
 import com.liferay.portal.kernel.template.TemplateContextContributor;
+import com.liferay.portal.kernel.util.StringBundler;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -62,20 +64,20 @@ public class TemplateContextDumper
 		private String visualization(String key) {
 			Object object = contextObjects.get(key);
 			if(object != null) {
-				if(key.equals("Request")) {
-					try {
+				try {
+					if(key.equals("Request")) {
 						Method keysMethod = ReflectionUtil.getDeclaredMethod(object.getClass(), "keys");
 						Method valuesMethod = ReflectionUtil.getDeclaredMethod(object.getClass(), "values");
 						Object keys = keysMethod.invoke(object);
 						Object values = valuesMethod.invoke(object);
-						return enumerateKeys(keys, values); 
-					}
-					catch (Exception e) {
-						e.printStackTrace();
-						return e.getClass().getName() + " " + e.getMessage();
+						return object.getClass().getName() + enumerateKeys(keys, values); 
 					}
 				}
-				return object.getClass().getName(); 
+				catch (Exception e) {
+					e.printStackTrace();
+					return e.getClass().getName() + " " + e.getMessage();
+				}
+				return toString(object);
 			}
 			return "<i>null</i>";
 		}
@@ -93,11 +95,93 @@ public class TemplateContextDumper
 				Object key = nextKeyMethod.invoke(keyIterator);
 				Object value = nextValueMethod.invoke(valueIterator);
 				
-				result.append("<li><strong>" + key.toString() + "</strong> " + value.toString() + "</li>");
+				result.append("<li><strong>" + key.toString() + "</strong> " + toString(value) + "</li>");
+
+				if(key.toString().equals("COLLECTION_STYLED_LAYOUT_STRUCTURE_ITEM_IDS")) {
+					Method sizeMethod = ReflectionUtil.getDeclaredMethod(value.getClass(), "size");
+					Method getMethod = ReflectionUtil.getDeclaredMethod(value.getClass(), "get", int.class);
+					int size = (int) sizeMethod.invoke(value);
+					result.append("<ul>");
+					for(int i = 0; i < size; i++) {
+						Object element = getMethod.invoke(value, i);
+						result.append("<li>").append(element.getClass().getName());
+						Method getAsStringMethod = ReflectionUtil.getDeclaredMethod(element.getClass(), "getAsString");
+						Object stringRepresentation = getAsStringMethod.invoke(element);
+						result.append(": ")
+							.append(stringRepresentation.toString())
+							.append("</li>");
+					}
+					result.append("</ul>");
+				} else if(key.toString().equals("INFO_ITEM_REFERENCE")) {
+					result.append("<ul>");
+					result.append("<li>").append(value.getClass().getName()).append("</li>");
+					try {
+						Method getWrappedObjectMethod = ReflectionUtil.getDeclaredMethod(value.getClass(), "getWrappedObject");
+						result.append("<li>1</li>");
+						getWrappedObjectMethod.setAccessible(true);
+						result.append("<li>2</li>");
+						Object wrappedObject = getWrappedObjectMethod.invoke(value);
+						result.append("<li>").append(wrappedObject.getClass().getName()).append("</li>");
+					} catch(NoSuchMethodException e) {
+						result.append("<li>")
+							.append(e.getClass().getName())
+							.append(" ")
+							.append(e.getMessage())
+							.append("</li>");
+					}
+					result.append("<ul>");
+					for (Class<? extends Object> c = value.getClass(); c != null; c = c.getSuperclass()) {
+						result.append("<li><strong>").append(c.getName()).append(":</strong></li>");
+						for (Method method : c.getDeclaredMethods()) {
+					//	  if (method.getAnnotation(PostConstruct.class) != null) {
+						    result.append("<li>");
+						    result.append(method.getName() + " " + Modifier.toString(method.getModifiers()) + " " + method.getParameterCount());
+						    result.append("</li>");
+					//	  }
+						}
+					}
+					result.append("</ul>");
+					result.append("</ul>");
+				}
 			}
 			result.append("</ul>");
 			return result.toString();
 		}
+		
+		private String toString(Object object) {
+			StringBundler result = new StringBundler(object.getClass().getName());
+			if(hasSize(object)) {
+				result.append(" ").append(getSize(object));
+			}
+			if(object != this) {
+				String objectToString = object.toString();
+				if(! objectToString.startsWith(object.getClass().getName()+"@")) {
+					result.append("<br/>").append(objectToString);
+				} 
+			}
+			return result.toString();
+		}
+		
+		private boolean hasSize(Object object) {
+			try {
+				Method sizeMethod = ReflectionUtil.getDeclaredMethod(object.getClass(), "size");
+				return sizeMethod != null;
+			} catch (Exception e) {
+				return false;
+			}
+			
+		}
+		
+		private String getSize(Object object) {
+			try {
+				Method sizeMethod = ReflectionUtil.getDeclaredMethod(object.getClass(), "size");
+				return "(" + ((int) sizeMethod.invoke(object)) + " element(s))";
+			} catch (Exception e) {
+				return e.getClass().getName() + " " + e.getMessage() + " when invoking size()";
+			}
+		}
+		
 	}
+
 
 }
